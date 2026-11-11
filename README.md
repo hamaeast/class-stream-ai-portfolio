@@ -16,6 +16,12 @@ Also see my own classroom app, the [EAST Dashboard](https://github.com/hamaeast/
 
 ---
 
+## How it started
+
+Class Stream began as a request for **one central place for the class**. Students needed to find lesson materials, keep track of deadlines, submit work, follow their progress, and know what to do next. The teacher needed to organize lessons and curriculum, assign work, and manage grading.
+
+It started with that core and has since grown to include quizzes, guided notes, practice, vocabulary, pacing calendars, and teacher feedback. Each addition aimed to make classroom learning and management clearer and more organized.
+
 ## Who did what
 
 - **The teacher** supplied the Google Drive course materials (lesson plans, guided notes, practice worksheets and answer keys, quizzes, and the pacing calendar) and explained how she wanted the class to run each day.
