@@ -1,0 +1,112 @@
+{
+  "name": "VocabularyWord",
+  "type": "object",
+  "properties": {
+    "word": {
+      "type": "string",
+      "description": "The vocabulary term the student is collecting."
+    },
+    "definition": {
+      "type": "string",
+      "default": "",
+      "description": "The student's definition of the term."
+    },
+    "example_sentence": {
+      "type": "string",
+      "default": "",
+      "description": "Optional example sentence using the term."
+    },
+    "phase": {
+      "type": "number",
+      "description": "Curriculum phase number (from the lesson title) used to group words by phase."
+    },
+    "lesson_id": {
+      "type": "string",
+      "description": "The lesson this word was tagged to (either opened by the student or chosen when adding)."
+    },
+    "lesson_title": {
+      "type": "string",
+      "description": "Snapshot of the lesson title at creation time, used to group/display words without resolving the lesson."
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "student",
+        "lesson"
+      ],
+      "default": "student",
+      "description": "'lesson' = auto-extracted when the student opened the lesson (or teacher bulk-seeded from the lesson plans); 'student' = manually added by the student."
+    },
+    "student_id": {
+      "type": "string",
+      "description": "The student whose vocabulary list this word belongs to. Set on student-added words (own id) AND teacher-seeded words (the target student's id), since created_by_id for teacher-seeded words is the service role \u2014 this field is the dependable ownership anchor the student reads through."
+    },
+    "teacher_comment": {
+      "type": "string",
+      "default": "",
+      "description": "Optional note a teacher leaves on this word, shown inline to the student."
+    },
+    "commented_by_id": {
+      "type": "string",
+      "description": "User id of the teacher who left the comment."
+    },
+    "commented_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the teacher comment was last set."
+    }
+  },
+  "required": [
+    "word"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.student_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.student_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.student_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

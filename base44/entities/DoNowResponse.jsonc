@@ -1,0 +1,79 @@
+{
+  "name": "DoNowResponse",
+  "type": "object",
+  "properties": {
+    "do_now_id": {
+      "type": "string",
+      "description": "The DoNow.do_now_id this response is for."
+    },
+    "answer": {
+      "type": "string",
+      "description": "The choice the student selected (A/B/C/D). Empty string when time expired with no selection."
+    },
+    "is_correct": {
+      "type": "boolean",
+      "default": false
+    },
+    "score": {
+      "type": "number",
+      "default": 0,
+      "description": "Points earned (0 or points_possible)."
+    },
+    "points_possible": {
+      "type": "number",
+      "default": 1
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the student's attempt was graded and locked."
+    },
+    "attempts": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of graded attempts used. Increments on each submission/reopen."
+    },
+    "reopened": {
+      "type": "boolean",
+      "default": false,
+      "description": "Set true by a teacher to let the student attempt again; cleared on the student's next submission."
+    }
+  },
+  "required": [
+    "do_now_id"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

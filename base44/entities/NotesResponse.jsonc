@@ -1,0 +1,86 @@
+{
+  "name": "NotesResponse",
+  "type": "object",
+  "properties": {
+    "lesson_id": {
+      "description": "The lesson these guided notes belong to",
+      "type": "string"
+    },
+    "title": {
+      "description": "Assignment title for grades, e.g. 'Notes - {topic}'. Matches the lesson and the word notes.",
+      "type": "string"
+    },
+    "answers_text": {
+      "description": "JSON { blanks: { \"0\": \"typed text\", \"1\": \"...\" } } of the student's filled-in answers",
+      "type": "string"
+    },
+    "status": {
+      "description": "in_progress = still filling in / autosaving; submitted = turned in and locked, counts as a 5-point grade",
+      "type": "string",
+      "enum": [
+        "in_progress",
+        "submitted"
+      ],
+      "default": "in_progress"
+    },
+    "score": {
+      "description": "Points earned. Submitted with every box filled = 5.",
+      "type": "number",
+      "default": 0
+    },
+    "total": {
+      "description": "Points possible for the notes assignment.",
+      "type": "number",
+      "default": 5
+    },
+    "submitted_at": {
+      "description": "When the student submitted the notes (turned in).",
+      "format": "date-time",
+      "type": "string"
+    }
+  },
+  "required": [
+    "lesson_id"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,131 @@
+{
+  "name": "DoNow",
+  "type": "object",
+  "properties": {
+    "do_now_id": {
+      "type": "string",
+      "description": "Unique id for this daily Do Now, e.g. CS9-D001. Used to link student responses."
+    },
+    "day_number": {
+      "type": "number",
+      "default": 0,
+      "description": "Instructional day number across the year."
+    },
+    "phase": {
+      "type": "string",
+      "description": "Unit / phase label (the 'Unit' column on the pacing sheet)."
+    },
+    "lesson_topic": {
+      "type": "string"
+    },
+    "arkansas_standard": {
+      "type": "string"
+    },
+    "question_type": {
+      "type": "string",
+      "enum": [
+        "multiple_choice"
+      ],
+      "default": "multiple_choice"
+    },
+    "question": {
+      "type": "string"
+    },
+    "choice_a": {
+      "type": "string"
+    },
+    "choice_b": {
+      "type": "string"
+    },
+    "choice_c": {
+      "type": "string"
+    },
+    "choice_d": {
+      "type": "string"
+    },
+    "correct_answer": {
+      "type": "string",
+      "enum": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "description": "Teacher-only. Never sent to students before they submit."
+    },
+    "correct_answer_text": {
+      "type": "string",
+      "description": "Teacher-only: full text of the correct choice."
+    },
+    "answer_explanation": {
+      "type": "string",
+      "description": "Teacher-only. Shown to a student only after they submit."
+    },
+    "time_limit_minutes": {
+      "type": "number",
+      "default": 5
+    },
+    "points_possible": {
+      "type": "number",
+      "default": 1
+    },
+    "gradebook_setting": {
+      "type": "string",
+      "enum": [
+        "Yes",
+        "No",
+        "Teacher Decides"
+      ],
+      "default": "Teacher Decides",
+      "description": "Whether this Do Now counts in the gradebook."
+    },
+    "active": {
+      "type": "boolean",
+      "default": true,
+      "description": "When false the Do Now is hidden from students even if scheduled."
+    },
+    "scheduled_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date the Do Now runs (YYYY-MM-DD). Empty = not yet scheduled."
+    },
+    "scheduled_start_time": {
+      "type": "string",
+      "description": "Class-period start, HH:MM (24h) local time."
+    },
+    "scheduled_end_time": {
+      "type": "string",
+      "description": "Class-period end / lock time, HH:MM (24h) local time."
+    },
+    "show_explanation_after_submit": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "do_now_id",
+    "question"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

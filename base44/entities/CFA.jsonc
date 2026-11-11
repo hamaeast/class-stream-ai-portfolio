@@ -1,0 +1,60 @@
+{
+  "name": "CFA",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Display title, e.g. 'CFA: Phase 1-3'."
+    },
+    "phase_start": {
+      "type": "number",
+      "description": "First curriculum phase this CFA covers."
+    },
+    "phase_end": {
+      "type": "number",
+      "description": "Last curriculum phase this CFA covers."
+    },
+    "study_guide": {
+      "type": "string",
+      "default": "",
+      "description": "Markdown study guide covering the phase range. AI-generated, teacher-editable. Always visible to students."
+    },
+    "questions_json": {
+      "type": "string",
+      "description": "Cached multiple-choice questions: JSON of {questions:[{question, choices:[...4], answer_index}]}. Hidden from students until published."
+    },
+    "published": {
+      "type": "boolean",
+      "default": false,
+      "description": "Teacher release gate. When false the CFA questions are hidden from students (the study guide stays visible)."
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Optional CFA due date used for nine-weeks placement in the gradebook."
+    }
+  },
+  "required": [
+    "title",
+    "phase_start",
+    "phase_end"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

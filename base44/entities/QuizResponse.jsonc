@@ -1,0 +1,87 @@
+{
+  "name": "QuizResponse",
+  "type": "object",
+  "properties": {
+    "lesson_id": {
+      "type": "string",
+      "description": "The lesson quiz this response belongs to"
+    },
+    "answers_text": {
+      "type": "string",
+      "description": "JSON { selections: { questionIndex: choiceIndex } }"
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the student opened the quiz \u2014 used to enforce the 5-minute minimum"
+    },
+    "attempted_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Date and time the graded attempt was submitted"
+    },
+    "score": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of correct answers (auto-graded)"
+    },
+    "total": {
+      "type": "number",
+      "default": 0,
+      "description": "Total questions in the quiz"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "in_progress",
+        "graded",
+        "returned"
+      ],
+      "default": "in_progress"
+    }
+  },
+  "required": [
+    "lesson_id"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "properties": {
+    "role": {
+      "type": "string",
+      "description": "The role of the user in the app",
+      "enum": [
+        "admin",
+        "user"
+      ]
+    },
+    "grade": {
+      "type": "string",
+      "description": "Student's grade level"
+    },
+    "class_period": {
+      "type": "string",
+      "description": "Student's assigned class period"
+    },
+    "onboarded": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the student completed profile onboarding"
+    },
+    "eschool_id": {
+      "type": "string",
+      "description": "eSchoolPLUS Student ID used for TAC gradebook CSV import."
+    }
+  },
+  "required": [
+    "role"
+  ],
+  "name": "User",
+  "type": "object"
+}

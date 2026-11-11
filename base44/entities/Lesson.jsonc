@@ -1,0 +1,67 @@
+{
+  "name": "Lesson",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "content": {
+      "type": "string"
+    },
+    "file_url": {
+      "type": "string"
+    },
+    "order": {
+      "type": "number",
+      "default": 0
+    },
+    "quiz_file_url": {
+      "type": "string",
+      "description": "Link to the matching Google Doc quiz (title = lesson name): the doc with the multiple-choice questions and the bolded answer key"
+    },
+    "quiz_json": {
+      "type": "string",
+      "description": "Cached parsed quiz: JSON of {questions:[{question, choices:[...], answer_index}]}"
+    },
+    "notes_blanks_json": {
+      "type": "string",
+      "description": "Cached fill-in-the-blank items generated from the lesson's notes: JSON of {blanks:[{before, answer, after, hint}]}"
+    },
+    "notes_file_url": {
+      "type": "string",
+      "description": "The Drive link the notes worksheet was built from (manual link pasted by an admin, or the file resolved by name search). Stored so the 'Update notes' action re-pulls this exact doc \u2014 even after edits or renames \u2014 without re-searching."
+    },
+    "notes_answer_key": {
+      "type": "string",
+      "description": "Teacher-only: LLM-generated answer key for the notes blanks, JSON of {blanks: {\"0\":\"answer\",\"qc1\":\"answer\"}}. Generated on first teacher open and cached; cleared when notes are rebuilt. Never rendered on the student-facing worksheet."
+    },
+    "practice_file_url": {
+      "type": "string",
+      "description": "Google Doc link to the student practice worksheet (titled 'practice-<lesson>')."
+    },
+    "practice_key_file_url": {
+      "type": "string",
+      "description": "Google Doc link to the practice answer key (titled 'practice (KEY) - <lesson>'). Held only to seed the server-side key; never sent to students."
+    },
+    "practice_json": {
+      "type": "string",
+      "description": "Cached student-facing practice: JSON of {title, point_goal, questions:[{id, tier, points, label, prompt}]}. No answers."
+    },
+    "practice_published": {
+      "type": "boolean",
+      "default": false,
+      "description": "Teacher-controlled release from the Assign pane. When false the practice is hidden from students even though it's already built/cached."
+    },
+    "practice_due_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Practice due date. Defaults to the lesson's pacing-calendar date when the teacher flips Assign on. Empty = no due date."
+    }
+  },
+  "required": [
+    "title"
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "name": "VocabReference",
+  "type": "object",
+  "properties": {
+    "lesson_id": {
+      "type": "string",
+      "description": "The Lesson this vocabulary reference belongs to."
+    },
+    "phase": {
+      "type": "number",
+      "description": "Curriculum phase number, used to group references by phase."
+    },
+    "lesson_title": {
+      "type": "string",
+      "description": "Snapshot of the lesson title, used for display without resolving the lesson."
+    },
+    "terms_json": {
+      "type": "string",
+      "description": "Teacher-only reference: JSON array of [{word, definition}] pulled from the lesson plan's vocab-list. Built by buildVocabReferences; never sent to students."
+    }
+  },
+  "required": [
+    "lesson_id"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "name": "Assignment",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "lesson_id": {
+      "type": "string"
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "file_url": {
+      "type": "string"
+    },
+    "published": {
+      "type": "boolean",
+      "default": false,
+      "description": "Teacher-controlled release. When false the assignment is hidden from students (and excluded from grades) even if it has a suggested due date."
+    },
+    "grade_period_override": {
+      "type": "string",
+      "description": "Nine-weeks placement override. '1'..'4' forces this assignment into that nine weeks; 'omitted' excludes it from all nine-week grades. Empty/null = auto from due_date.",
+      "default": ""
+    },
+    "submission_type": {
+      "type": "string",
+      "enum": [
+        "text",
+        "link_embed"
+      ],
+      "default": "text",
+      "description": "How students submit. 'text' = short answer + file upload (default). 'link_embed' = paste a program link and/or embed code (rendered live on the submission page)."
+    },
+    "phase_after": {
+      "type": "number",
+      "description": "For standalone assignments (no lesson_id): render this assignment in the module tree right after this phase number, between that phase and the next."
+    },
+    "points": {
+      "type": "number",
+      "description": "Points the assignment is worth (teacher grading reference; shown to students on the assignment). Empty/null = no points label."
+    }
+  },
+  "required": [
+    "title"
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "name": "PracticeAnswerKey",
+  "type": "object",
+  "properties": {
+    "lesson_id": {
+      "description": "The lesson this practice answer key belongs to.",
+      "type": "string"
+    },
+    "keys_text": {
+      "description": "JSON array of [{id, tier, points, prompt, model_answer}] pulled from the teacher's key doc. Server-side only \u2014 the grading function reads it; students never receive it.",
+      "type": "string"
+    }
+  },
+  "required": [
+    "lesson_id"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "name": "Submission",
+  "type": "object",
+  "properties": {
+    "assignment_id": {
+      "type": "string"
+    },
+    "submission_text": {
+      "type": "string"
+    },
+    "file_url": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "submitted",
+        "graded"
+      ],
+      "default": "submitted"
+    },
+    "grade": {
+      "type": "string"
+    },
+    "feedback": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "assignment_id"
+  ]
+}

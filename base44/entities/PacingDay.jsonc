@@ -1,0 +1,37 @@
+{
+  "name": "PacingDay",
+  "type": "object",
+  "properties": {
+    "date": {
+      "type": "string",
+      "description": "Instructional date (MM/DD/YYYY from the pacing spreadsheet)"
+    },
+    "day": {
+      "type": "string",
+      "description": "Day of week label"
+    },
+    "instructional_day": {
+      "type": "number",
+      "description": "Running instructional-day number across the year"
+    },
+    "phase": {
+      "type": "string",
+      "description": "Phase label, e.g. 'Phase 1: What Is CS' or 'Orientation Week'"
+    },
+    "day_in_phase": {
+      "type": "string",
+      "description": "Day index within the phase, e.g. '1/7'"
+    },
+    "lesson_focus": {
+      "type": "string",
+      "description": "Lesson / Focus text for the day"
+    },
+    "standards": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "date",
+    "phase"
+  ]
+}

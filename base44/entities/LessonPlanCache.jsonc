@@ -1,0 +1,39 @@
+{
+  "name": "LessonPlanCache",
+  "type": "object",
+  "properties": {
+    "file_id": {
+      "type": "string",
+      "description": "Google Drive file id this cached HTML belongs to."
+    },
+    "html": {
+      "type": "string",
+      "description": "Cached HTML pulled from the Drive file so lesson plans render without re-fetching Drive on every view. Written server-side by getPhaseBook; students never read this entity directly."
+    }
+  },
+  "required": [
+    "file_id"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

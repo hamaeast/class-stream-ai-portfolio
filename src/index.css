@@ -1,0 +1,160 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 240 45% 5%;
+    --foreground: 170 30% 94%;
+    --card: 236 38% 10%;
+    --card-foreground: 170 30% 94%;
+    --popover: 238 40% 8%;
+    --popover-foreground: 170 30% 94%;
+    --primary: 187 100% 50%;
+    --primary-foreground: 240 45% 6%;
+    --secondary: 260 40% 14%;
+    --secondary-foreground: 270 60% 90%;
+    --muted: 236 34% 14%;
+    --muted-foreground: 220 20% 62%;
+    --accent: 160 100% 48%;
+    --accent-foreground: 240 45% 6%;
+    --destructive: 330 95% 58%;
+    --destructive-foreground: 340 90% 98%;
+    --border: 236 40% 20%;
+    --input: 236 42% 18%;
+    --ring: 187 100% 50%;
+    --chart-1: 187 100% 50%;
+    --chart-2: 140 100% 55%;
+    --chart-3: 320 100% 62%;
+    --chart-4: 50 100% 58%;
+    --chart-5: 200 100% 60%;
+    --radius: 0.75rem;
+    --font-heading: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+    --font-body: "JetBrains Mono", "Space Grotesk", ui-monospace, monospace;
+    --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+    --font-mono: ui-monospace, "JetBrains Mono", SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    --sidebar-background: 242 48% 6%;
+    --sidebar-foreground: 170 25% 90%;
+    --sidebar-primary: 187 100% 50%;
+    --sidebar-primary-foreground: 240 45% 6%;
+    --sidebar-accent: 260 40% 16%;
+    --sidebar-accent-foreground: 270 60% 92%;
+    --sidebar-border: 236 40% 18%;
+    --sidebar-ring: 187 100% 50%;
+  }
+
+  .dark {
+    --background: 240 45% 5%;
+    --foreground: 170 30% 94%;
+    --card: 236 38% 10%;
+    --card-foreground: 170 30% 94%;
+    --popover: 238 40% 8%;
+    --popover-foreground: 170 30% 94%;
+    --primary: 187 100% 50%;
+    --primary-foreground: 240 45% 6%;
+    --secondary: 260 40% 14%;
+    --secondary-foreground: 270 60% 90%;
+    --muted: 236 34% 14%;
+    --muted-foreground: 220 20% 62%;
+    --accent: 160 100% 48%;
+    --accent-foreground: 240 45% 6%;
+    --destructive: 330 95% 58%;
+    --destructive-foreground: 340 90% 98%;
+    --border: 236 40% 20%;
+    --input: 236 42% 18%;
+    --ring: 187 100% 50%;
+    --chart-1: 187 100% 50%;
+    --chart-2: 140 100% 55%;
+    --chart-3: 320 100% 62%;
+    --chart-4: 50 100% 58%;
+    --chart-5: 200 100% 60%;
+    --sidebar-background: 242 48% 6%;
+    --sidebar-foreground: 170 25% 90%;
+    --sidebar-primary: 187 100% 50%;
+    --sidebar-primary-foreground: 240 45% 6%;
+    --sidebar-accent: 260 40% 16%;
+    --sidebar-accent-foreground: 270 60% 92%;
+    --sidebar-border: 236 40% 18%;
+    --sidebar-ring: 187 100% 50%;
+  }
+}
+
+@media print {
+  body { background: #fff !important; background-image: none !important; }
+  aside, nav { display: none !important; }
+  main { padding: 0 !important; }
+  .no-print, .print\:hidden { display: none !important; }
+}
+
+.preview-mode {
+  --primary: 35 92% 48%;
+  --primary-foreground: 30 40% 8%;
+  --ring: 35 92% 48%;
+  --sidebar-primary: 35 92% 48%;
+  --sidebar-ring: 35 92% 48%;
+}
+
+/* Guided notes worksheet: the cached notes HTML (with inline <input.nb-blank>). */
+.notes-doc { color: hsl(var(--foreground)); line-height: 1.75; font-size: 0.95rem; }
+.notes-doc h1 { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; margin: 0.6rem 0 0.35rem; }
+.notes-doc h2 { font-family: var(--font-display); font-size: 1.2rem; font-weight: 600; margin: 0.6rem 0 0.25rem; }
+.notes-doc p { margin: 0.45rem 0; }
+.notes-doc strong { color: hsl(var(--foreground)); font-weight: 700; }
+.notes-doc table { border-collapse: collapse; margin: 0.6rem 0; width: 100%; }
+.notes-doc td { border: 1px solid hsl(var(--border)); padding: 0.45rem 0.6rem; background: hsl(var(--card)); }
+.nb-blank {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid hsl(var(--primary) / 0.55);
+  color: hsl(var(--accent));
+  font: inherit;
+  font-weight: 600;
+  padding: 1px 0.3rem;
+  min-width: 140px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.nb-blank:focus {
+  border-bottom-color: hsl(var(--accent));
+  box-shadow: 0 2px 0 -1px hsl(var(--accent) / 0.7);
+}
+.nb-blank:disabled {
+  border-bottom-style: dashed;
+  opacity: 0.85;
+  cursor: default;
+}
+/* Teacher answer-key fill: the generated answer shown inline for admins only. */
+.nb-blank-key {
+  display: inline-block;
+  min-width: 140px;
+  padding: 1px 0.35rem;
+  color: hsl(var(--accent));
+  font-weight: 700;
+  border-bottom: 2px solid hsl(var(--accent) / 0.7);
+  background: hsl(var(--accent) / 0.1);
+  border-radius: 3px;
+}
+.nb-blank-empty {
+  color: hsl(var(--muted-foreground));
+  font-style: italic;
+  border-bottom-style: dashed;
+  background: transparent;
+  font-weight: 400;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground font-body antialiased;
+    background-image:
+      radial-gradient(ellipse 60% 40% at 50% -5%, hsl(187 100% 50% / 0.14), transparent 60%),
+      radial-gradient(ellipse 50% 40% at 100% 100%, hsl(320 100% 62% / 0.10), transparent 60%),
+      radial-gradient(ellipse 50% 40% at 0% 100%, hsl(160 100% 48% / 0.08), transparent 60%);
+    background-attachment: fixed;
+  }
+}

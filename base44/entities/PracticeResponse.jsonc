@@ -1,0 +1,113 @@
+{
+  "name": "PracticeResponse",
+  "type": "object",
+  "properties": {
+    "lesson_id": {
+      "description": "Lesson this practice belongs to.",
+      "type": "string"
+    },
+    "title": {
+      "description": "Assignment title for grades, e.g. 'Practice \u2014 <topic>'.",
+      "type": "string"
+    },
+    "point_goal": {
+      "description": "Point target the student had to reach (e.g. 10).",
+      "type": "number",
+      "default": 10
+    },
+    "answers_text": {
+      "description": "JSON { qid: student text } of the latest attempt.",
+      "type": "string"
+    },
+    "feedback_text": {
+      "description": "JSON { qid: { score, max, feedback } } from AI grading of the latest attempt.",
+      "type": "string"
+    },
+    "score": {
+      "description": "Points earned (latest attempt). Tentative AI score while status='under_review'; final after teacher approval.",
+      "type": "number",
+      "default": 0
+    },
+    "total": {
+      "description": "Points possible across the answered questions (latest attempt).",
+      "type": "number",
+      "default": 0
+    },
+    "confidence": {
+      "description": "AI self-reported confidence in the latest attempt's scores (0-1). Weights per-question confidence by points.",
+      "type": "number"
+    },
+    "review_needed": {
+      "description": "True when AI confidence < 90% and the attempt awaits teacher review (status='under_review').",
+      "type": "boolean",
+      "default": false
+    },
+    "attempts": {
+      "description": "Number of graded attempts used. 1 = first submit; 3 = both reattempts used.",
+      "type": "number",
+      "default": 0
+    },
+    "attempt_history_text": {
+      "description": "JSON array of every attempt: [{answers, feedback, score, total, attempt, at}].",
+      "type": "string"
+    },
+    "submitted_at": {
+      "description": "When the latest attempt was graded and locked.",
+      "format": "date-time",
+      "type": "string"
+    },
+    "status": {
+      "description": "'submitted' = graded and final (confidence >= 90% or post teacher-approval). 'under_review' = AI was below 90% confident and the teacher must approve it before the score posts to the gradebook.",
+      "type": "string",
+      "enum": [
+        "submitted",
+        "under_review"
+      ],
+      "default": "submitted"
+    }
+  },
+  "required": [
+    "lesson_id"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

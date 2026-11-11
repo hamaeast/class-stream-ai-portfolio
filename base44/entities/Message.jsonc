@@ -1,0 +1,32 @@
+{
+  "name": "Message",
+  "type": "object",
+  "properties": {
+    "body": {
+      "type": "string"
+    },
+    "target_type": {
+      "type": "string",
+      "enum": [
+        "individual",
+        "block",
+        "all"
+      ],
+      "default": "all"
+    },
+    "target_user_id": {
+      "type": "string"
+    },
+    "target_periods": {
+      "type": "string"
+    },
+    "deleted_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "body",
+    "target_type"
+  ]
+}
