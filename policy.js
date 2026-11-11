@@ -50,12 +50,21 @@
 
   // Clamp each score to the item's points, clamp confidence to 0..1, compute a
   // points-weighted average confidence, and flag for teacher review below 0.90.
+  // Results are built from the SUBMITTED item ids (default: every key item):
+  // model results for ids that weren't submitted are ignored, and a submitted
+  // item the model skipped scores 0 of its points with confidence 0, so it
+  // can't silently drop out of the max and it forces teacher review.
   // NOTE: confidence is the model's own estimate, not a measured accuracy rate.
-  function finalizeGrades(keyItems, modelResults) {
+  function finalizeGrades(keyItems, modelResults, submittedIds) {
     const keyMap = new Map(keyItems.map(k => [k.id, k]));
-    const results = (modelResults || []).map(r => {
-      const max = (keyMap.get(r.id) || {}).points || 0;
-      return { id: r.id, score: Math.max(0, Math.min(max, Number(r.score) || 0)), max, feedback: String(r.feedback || ''), confidence: Math.max(0, Math.min(1, Number(r.confidence) || 0)) };
+    const ids = submittedIds || keyItems.map(k => k.id);
+    const byId = new Map();
+    (modelResults || []).forEach(r => { if (r && !byId.has(String(r.id))) byId.set(String(r.id), r); });
+    const results = ids.map(id => {
+      const max = (keyMap.get(id) || {}).points || 0;
+      const r = byId.get(id);
+      if (!r) return { id, score: 0, max, feedback: 'Not graded automatically', confidence: 0 };
+      return { id, score: Math.max(0, Math.min(max, Number(r.score) || 0)), max, feedback: String(r.feedback || ''), confidence: Math.max(0, Math.min(1, Number(r.confidence) || 0)) };
     });
     const total_score = results.reduce((a, r) => a + r.score, 0);
     const total_max = results.reduce((a, r) => a + r.max, 0);
