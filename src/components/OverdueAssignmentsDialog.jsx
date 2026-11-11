@@ -9,6 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { AlertTriangle } from "lucide-react";
 import { isPast, parseISO } from "date-fns";
+import { ownerOf } from "@/lib/ownership";
 
 // One-per-session reminder shown on login: any released assignment past its
 // due date that the student hasn't turned in. Dismissing stashes the ids in
@@ -24,7 +25,7 @@ export default function OverdueAssignmentsDialog({ student, assignments, submiss
 
   const overdue = useMemo(() => {
     const subFor = (id) =>
-      (submissions || []).find((s) => s.assignment_id === id && s.created_by_id === student?.id);
+      (submissions || []).find((s) => s.assignment_id === id && ownerOf(s) === student?.id);
     return (assignments || [])
       .filter((a) => a.published)
       .filter((a) => a.due_date)

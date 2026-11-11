@@ -29,6 +29,13 @@ test('low self-reported confidence on a high-point item sends the attempt to the
   assert.equal(r.confidence, 0.7); assert.equal(r.review_needed, true);
 });
 
+test('an item the model skipped still counts: 0 points of its max, confidence 0, review forced', () => {
+  const r = finalizeGrades(items, [{ id: 'practice1', score: 1, confidence: 1 }, { id: 'extra9', score: 5, confidence: 1 }], ['practice1', 'apply2']);
+  assert.deepEqual(r.results.map(x => [x.id, x.score, x.max, x.confidence]), [['practice1', 1, 1, 1], ['apply2', 0, 3, 0]]);
+  assert.equal(r.results[1].feedback, 'Not graded automatically');
+  assert.equal(r.total_score, 1); assert.equal(r.total_max, 4); assert.equal(r.review_needed, true);
+});
+
 test('CFA cleanup drops malformed questions, clamps answer index, saves hidden', () => {
   const c = cleanCfa({ study_guide: ' g ', questions: [{ question: 'Q', choices: ['a', 'b', 'c', 'd', 'e'], answer_index: 7 }, { question: '', choices: ['a', 'b', 'c', 'd'] }, { question: 'Q2', choices: ['a', 'b'] }] });
   assert.equal(c.questions.length, 1); assert.equal(c.questions[0].answer_index, 3); assert.equal(c.questions[0].choices.length, 4); assert.equal(c.published, false);

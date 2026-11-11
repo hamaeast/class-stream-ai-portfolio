@@ -9,6 +9,7 @@ import GoogleDocPreview from "@/components/GoogleDocPreview";
 import { SECTION_HEADING, NEON_ACCENT } from "@/lib/neon-styles";
 import { useLesson, useAssignmentsForLesson } from "@/lib/entityQueries";
 import { base44 } from "@/api/base44Client";
+import { ownedBy } from "@/lib/ownership";
 import { parseLesson } from "@/lib/lessonPhases";
 import { planForLesson } from "@/lib/lessonPlans";
 import QuizForm from "@/components/QuizForm";
@@ -51,7 +52,7 @@ export default function LessonDetail() {
     try {
       const mine = await base44.entities.NotesResponse.filter({
         lesson_id: id,
-        created_by_id: me.id,
+        ...ownedBy(me.id),
       });
       setNotesSubmitted((mine || []).some((r) => r.status === "submitted"));
     } catch {

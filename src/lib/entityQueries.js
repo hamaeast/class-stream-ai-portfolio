@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { ownedBy } from "@/lib/ownership";
 import { usePreview } from "@/lib/PreviewContext";
 
 // Cache read-only lesson/assignment lookups so students and admins clicking
@@ -25,7 +26,7 @@ export function useMe() {
 export function useSubmissions(userId) {
   return useQuery({
     queryKey: ["submissions", userId],
-    queryFn: () => base44.entities.Submission.filter({ created_by_id: userId }),
+    queryFn: () => base44.entities.Submission.filter(ownedBy(userId)),
     enabled: !!userId,
     ...CACHE_OPTS,
   });
@@ -114,7 +115,7 @@ export function useCheckins() {
 export function usePracticeResponses(userId) {
   return useQuery({
     queryKey: ["practiceResponses", userId],
-    queryFn: () => base44.entities.PracticeResponse.filter({ created_by_id: userId }),
+    queryFn: () => base44.entities.PracticeResponse.filter(ownedBy(userId)),
     enabled: !!userId,
     ...CACHE_OPTS,
   });
@@ -124,7 +125,7 @@ export function usePracticeResponses(userId) {
 export function useNotesResponses(userId) {
   return useQuery({
     queryKey: ["notesresponses", userId],
-    queryFn: () => base44.entities.NotesResponse.filter({ created_by_id: userId }),
+    queryFn: () => base44.entities.NotesResponse.filter(ownedBy(userId)),
     enabled: !!userId,
     ...CACHE_OPTS,
   });
@@ -134,7 +135,7 @@ export function useNotesResponses(userId) {
 export function useQuizResponses(userId) {
   return useQuery({
     queryKey: ["quizresponses", userId],
-    queryFn: () => base44.entities.QuizResponse.filter({ created_by_id: userId }),
+    queryFn: () => base44.entities.QuizResponse.filter(ownedBy(userId)),
     enabled: !!userId,
     ...CACHE_OPTS,
   });

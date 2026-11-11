@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { RotateCcw, CheckCircle2, XCircle, Lock } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { ownerOf } from "@/lib/ownership";
 
 export default function DoNowReport({ open, doNow, responses, users, onClose }) {
   const qc = useQueryClient();
@@ -20,7 +21,7 @@ export default function DoNowReport({ open, doNow, responses, users, onClose }) 
       (id ? id.slice(-6) : "—");
     return responses
       .filter((r) => r.do_now_id === dn.do_now_id)
-      .map((r) => ({ ...r, student: nameFor(r.created_by_id) }))
+      .map((r) => ({ ...r, student: nameFor(ownerOf(r)) }))
       .sort((a, b) => (a.student || "").localeCompare(b.student || ""));
   }, [dn, responses, users]);
 

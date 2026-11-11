@@ -21,7 +21,7 @@
     },
     "questions_json": {
       "type": "string",
-      "description": "Cached multiple-choice questions: JSON of {questions:[{question, choices:[...4], answer_index}]}. Hidden from students until published."
+      "description": "Cached multiple-choice questions: JSON array of [{question, choices:[...4]}]. Hidden in the UI until published. Student-readable, so it carries no answers: the correct indexes live in the admin-only AssessmentAnswerKey (kind=cfa)."
     },
     "published": {
       "type": "boolean",

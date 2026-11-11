@@ -1,5 +1,9 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
 
+// Security: graded records are now written by server functions with the
+// service role, so the student is in student_id; legacy rows use created_by_id.
+const ownerOf = (r) => r.student_id || r.created_by_id;
+
 // ── Lesson title parsing (mirrors src/lib/lessonPhases.js) ──
 function parseLesson(l) {
   const overview = l.title.match(/^Phase\s*(\d+)\s*[—–-]\s*(.+)$/);
@@ -248,7 +252,7 @@ export default async function (req) {
     const notesIdx = new Map();
     for (const r of notesResp || []) {
       if (r.status !== "submitted") continue;
-      const k = r.created_by_id + "|" + r.lesson_id;
+      const k = ownerOf(r) + "|" + r.lesson_id;
       const prev = notesIdx.get(k);
       const d = r.submitted_at || r.updated_date;
       if (!prev || new Date(d) > new Date(prev.submitted_at || prev.updated_date))
@@ -257,14 +261,14 @@ export default async function (req) {
     // Best-of practice per (student, lesson) — highest graded attempt wins.
     const practiceIdx = new Map();
     for (const r of practiceResp || []) {
-      const k = r.created_by_id + "|" + r.lesson_id;
+      const k = ownerOf(r) + "|" + r.lesson_id;
       practiceIdx.set(k, practiceBestOf(practiceIdx.get(k), r));
     }
     // Latest graded quiz per (student, lesson).
     const quizIdx = new Map();
     for (const r of quizResp || []) {
       if (r.status !== "graded") continue;
-      const k = r.created_by_id + "|" + r.lesson_id;
+      const k = ownerOf(r) + "|" + r.lesson_id;
       const prev = quizIdx.get(k);
       if (!prev || new Date(r.attempted_at) > new Date(prev.attempted_at))
         quizIdx.set(k, r);
@@ -273,14 +277,14 @@ export default async function (req) {
     const cfaIdx = new Map();
     for (const r of cfaRespList || []) {
       if (r.status !== "graded") continue;
-      const k = r.created_by_id + "|" + r.cfa_id;
+      const k = ownerOf(r) + "|" + r.cfa_id;
       const prev = cfaIdx.get(k);
       if (!prev || new Date(r.attempted_at) > new Date(prev.attempted_at)) cfaIdx.set(k, r);
     }
     // Latest submission per (student, assignment).
     const subIdx = new Map();
     for (const s of subs || [])
-      subIdx.set(s.created_by_id + "|" + s.assignment_id, s);
+      subIdx.set(ownerOf(s) + "|" + s.assignment_id, s);
 
     // Per-lesson possible-point anchors.
     const practiceGoal = new Map(); // lesson id -> point_goal (default 10)

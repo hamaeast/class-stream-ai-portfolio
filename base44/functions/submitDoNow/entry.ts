@@ -1,8 +1,14 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.41";
+import { findOwnRecord, writeOwnRecord } from "../../shared/studentRecords.ts";
 
 // Grades and locks a student's Do Now attempt. The correct answer lives on
-// the admin-only DoNow entity, so we read it with the service role; the
-// response is written user-scoped so ownership RLS is honoured.
+// the admin-only DoNow entity, so we read it with the service role.
+//
+// Security: the response (score, is_correct) used to be written user-scoped,
+// which required DoNowResponse create/update RLS to allow the student, so a
+// student could also write their own score directly. Create/update is now
+// admin-only and the response is written here with the service role;
+// ownership is stamped in student_id (see shared/studentRecords.ts).
 export default async function (req: Request): Promise<Response> {
   try {
     const base44 = createClientFromRequest(req);
@@ -21,11 +27,7 @@ export default async function (req: Request): Promise<Response> {
     if (!dn.length) return Response.json({ error: "Do Now not found" }, { status: 404 });
     const d = dn[0];
 
-    const existing = await base44.entities.DoNowResponse.filter({
-      do_now_id,
-      created_by_id: user.id,
-    });
-    const r = existing[0] || null;
+    const r = await findOwnRecord(base44, "DoNowResponse", { do_now_id }, user.id);
 
     // One attempt unless the teacher reopened it.
     if (r && r.completed_at && !r.reopened) {
@@ -40,29 +42,16 @@ export default async function (req: Request): Promise<Response> {
     const score = is_correct ? points : 0;
     const now = new Date().toISOString();
 
-    let rec;
-    if (r) {
-      rec = await base44.entities.DoNowResponse.update(r.id, {
-        answer: choice,
-        is_correct,
-        score,
-        points_possible: points,
-        completed_at: now,
-        attempts: (r.attempts || 0) + 1,
-        reopened: false,
-      });
-    } else {
-      rec = await base44.entities.DoNowResponse.create({
-        do_now_id,
-        answer: choice,
-        is_correct,
-        score,
-        points_possible: points,
-        completed_at: now,
-        attempts: 1,
-        reopened: false,
-      });
-    }
+    const rec = await writeOwnRecord(base44, "DoNowResponse", r, user.id, {
+      do_now_id,
+      answer: choice,
+      is_correct,
+      score,
+      points_possible: points,
+      completed_at: now,
+      attempts: (r?.attempts || 0) + 1,
+      reopened: false,
+    });
 
     return Response.json({
       ok: true,

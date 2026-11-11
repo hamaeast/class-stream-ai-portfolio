@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { base44 } from "@/api/base44Client";
+import { ownedBy, ownerOf } from "@/lib/ownership";
 import {
   Card,
   CardContent,
@@ -196,15 +197,15 @@ export default function Grades() {
       const isAdmin = !previewStudent && viewer?.role === "admin";
 
       const respFilter = previewStudent
-        ? { created_by_id: previewStudent.id }
+        ? ownedBy(previewStudent.id)
         : isAdmin
         ? {}
-        : { created_by_id: viewer.id };
+        : ownedBy(viewer.id);
       const subFilter = previewStudent
-        ? { created_by_id: previewStudent.id }
+        ? ownedBy(previewStudent.id)
         : isAdmin
         ? {}
-        : { created_by_id: viewer.id };
+        : ownedBy(viewer.id);
       // Each fetch is isolated so one failing/forbidden call can't black out the
       // whole page — a rejected fetch just yields [] and the table renders with
       // whatever data did load (the teacher always sees at least the structure).
@@ -306,7 +307,7 @@ export default function Grades() {
     const map = new Map();
     (responses || []).forEach((r) => {
       if (r.status !== "graded") return;
-      const k = `${r.created_by_id}|${r.lesson_id}`;
+      const k = `${ownerOf(r)}|${r.lesson_id}`;
       const prev = map.get(k);
       if (!prev || new Date(r.attempted_at) > new Date(prev.attempted_at)) map.set(k, r);
     });
@@ -315,7 +316,7 @@ export default function Grades() {
 
   const subIndex = useMemo(() => {
     const map = new Map();
-    (submissions || []).forEach((s) => map.set(`${s.created_by_id}|${s.assignment_id}`, s));
+    (submissions || []).forEach((s) => map.set(`${ownerOf(s)}|${s.assignment_id}`, s));
     return map;
   }, [submissions]);
 
@@ -349,7 +350,7 @@ export default function Grades() {
     const map = new Map();
     (notesResp || []).forEach((r) => {
       if (r.status !== "submitted") return;
-      const k = `${r.created_by_id}|${r.lesson_id}`;
+      const k = `${ownerOf(r)}|${r.lesson_id}`;
       const prev = map.get(k);
       const d = r.submitted_at || r.updated_date;
       if (!prev || new Date(d) > new Date(prev.submitted_at || prev.updated_date)) map.set(k, r);
@@ -409,7 +410,7 @@ export default function Grades() {
   const practiceIndex = useMemo(() => {
     const map = new Map();
     (practiceResp || []).forEach((r) => {
-      const k = `${r.created_by_id}|${r.lesson_id}`;
+      const k = `${ownerOf(r)}|${r.lesson_id}`;
       map.set(k, practiceBestOf(map.get(k), r));
     });
     return map;
@@ -559,7 +560,7 @@ export default function Grades() {
     const map = new Map();
     (cfaResp || []).forEach((r) => {
       if (r.status !== "graded") return;
-      const k = `${r.created_by_id}|${r.cfa_id}`;
+      const k = `${ownerOf(r)}|${r.cfa_id}`;
       const prev = map.get(k);
       if (!prev || new Date(r.attempted_at) > new Date(prev.attempted_at)) map.set(k, r);
     });
@@ -1113,7 +1114,7 @@ export default function Grades() {
         if (nineWeeks !== "all" && responsePeriod(r.attempted_at) !== Number(nineWeeks))
           return false;
         if (period !== "all") {
-          const u = (students || []).find((x) => x.id === r.created_by_id);
+          const u = (students || []).find((x) => x.id === ownerOf(r));
           return u?.class_period === period;
         }
         return true;
@@ -1711,10 +1712,10 @@ export default function Grades() {
                       {scopedGraded.map((r) => (
                         <tr key={r.id} className="border-t border-stone-200/10">
                           <td className="px-4 py-3 font-medium text-foreground">
-                            {studentName(r.created_by_id)}
+                            {studentName(ownerOf(r))}
                           </td>
                           <td className="px-4 py-3 text-center text-stone-400">
-                            {(students || []).find((x) => x.id === r.created_by_id)?.class_period ||
+                            {(students || []).find((x) => x.id === ownerOf(r))?.class_period ||
                               "—"}
                           </td>
                           <td className="px-4 py-3 text-stone-300">{lessonTitle(r.lesson_id)}</td>

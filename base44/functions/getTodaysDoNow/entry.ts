@@ -1,5 +1,6 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.41";
 import { todayInTz, nowHHMMInTz, windowStatus } from "../../shared/donow.ts";
+import { findOwnRecord } from "../../shared/studentRecords.ts";
 
 // Returns the student's view of today's scheduled Do Now, with answer /
 // explanation stripped out until the student has submitted. DoNow is an
@@ -45,12 +46,10 @@ export default async function (req: Request): Promise<Response> {
     const d = list[0];
     const status = windowStatus(d.scheduled_start_time, d.scheduled_end_time, nowT);
 
-    // The student's own response (user-scoped, honours RLS).
-    const resp = await base44.entities.DoNowResponse.filter({
-      do_now_id: d.do_now_id,
-      created_by_id: user.id,
-    });
-    const r = resp[0] || null;
+    // The student's own response. Security: responses are now written by
+    // submitDoNow with the service role (owner in student_id), so match both
+    // student_id and legacy created_by_id rows.
+    const r = await findOwnRecord(base44, "DoNowResponse", { do_now_id: d.do_now_id }, user.id);
     const completed = !!r && !!r.completed_at && !r.reopened;
 
     const payload: Record<string, unknown> = {

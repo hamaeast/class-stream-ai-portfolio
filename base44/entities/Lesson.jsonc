@@ -24,7 +24,7 @@
     },
     "quiz_json": {
       "type": "string",
-      "description": "Cached parsed quiz: JSON of {questions:[{question, choices:[...], answer_index}]}"
+      "description": "Cached parsed quiz: JSON array of [{question, choices:[...]}]. Student-readable, so it carries no answers: the correct indexes live in the admin-only AssessmentAnswerKey (kind=quiz)."
     },
     "notes_blanks_json": {
       "type": "string",

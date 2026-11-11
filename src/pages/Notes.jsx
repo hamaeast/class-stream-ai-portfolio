@@ -5,6 +5,7 @@ import CodeHeader from "@/components/CodeHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { useLessons } from "@/lib/entityQueries";
 import { base44 } from "@/api/base44Client";
+import { ownedBy } from "@/lib/ownership";
 import { usePreview } from "@/lib/PreviewContext";
 import { parseLesson } from "@/lib/lessonPhases";
 import BuildAllNotes from "@/components/BuildAllNotes";
@@ -51,7 +52,7 @@ export default function Notes() {
       }
       setViewer(v);
       try {
-        const r = await base44.entities.NotesResponse.filter({ created_by_id: v.id });
+        const r = await base44.entities.NotesResponse.filter(ownedBy(v.id));
         if (active) setResponses(r || []);
       } catch {}
     })();

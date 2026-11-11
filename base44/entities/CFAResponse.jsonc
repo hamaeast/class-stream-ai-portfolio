@@ -36,6 +36,10 @@
         "graded"
       ],
       "default": "in_progress"
+    },
+    "student_id": {
+      "type": "string",
+      "description": "Security: the student who owns this record. Set by the server function that writes it (service-role writes stamp created_by_id to the service, so ownership is anchored here). Legacy rows written by the student match on created_by_id instead."
     }
   },
   "required": [
@@ -48,6 +52,9 @@
           "created_by_id": "{{user.id}}"
         },
         {
+          "data.student_id": "{{user.id}}"
+        },
+        {
           "user_condition": {
             "role": "admin"
           }
@@ -55,31 +62,19 @@
       ]
     },
     "create": {
-      "created_by_id": "{{user.id}}"
+      "user_condition": {
+        "role": "admin"
+      }
     },
     "update": {
-      "$or": [
-        {
-          "created_by_id": "{{user.id}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "user_condition": {
+        "role": "admin"
+      }
     },
     "delete": {
-      "$or": [
-        {
-          "created_by_id": "{{user.id}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "user_condition": {
+        "role": "admin"
+      }
     }
   }
 }

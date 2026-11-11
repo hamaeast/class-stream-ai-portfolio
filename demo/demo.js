@@ -95,7 +95,7 @@
           c.saved ? h('p', { class: 'small muted' }, c.saved) : null,
           simBox('CFA draft', prompt, D.cfa.response),
         ] : null,
-        h('p', { class: 'where' }, 'Mirrors base44/functions/buildCfa and src/components/CfaEditor.jsx. Enforced in code: drop questions without text or exactly 4 choices, clamp answer_index to 0–3, save new CFAs with published=false, and only the teacher can edit or release them. The CFA is scored in code by matching answer_index. Asked in the prompt only: clear, fair, evenly spread questions. Known gap: in production, CFA records (including answer_index) are readable by any signed-in user.'))
+        h('p', { class: 'where' }, 'Mirrors base44/functions/buildCfa and src/components/CfaEditor.jsx. Enforced in code: drop questions without text or exactly 4 choices, clamp answer_index to 0–3, save new CFAs with published=false, and only the teacher can edit or release them. The CFA is scored in code by matching answer_index. Asked in the prompt only: clear, fair, evenly spread questions. Security fix in this repository (not yet in the live app): correct answers now live in an admin-only record, and scores are calculated on the server. See docs/security-review.md.'))
     ];
   }
 
@@ -132,7 +132,7 @@
           } }, 'Approve and post to gradebook')) : null,
           r ? simBox('Practice grading', D.gradingPrompt.replace('{{items}}', JSON.stringify(items(sub))), { results: sub.ai, total_score: sub.ai.reduce((a, x) => a + x.score, 0) }) : null);
       }),
-      h('p', { class: 'where' }, 'Mirrors base44/shared/gradePractice.ts, src/components/PracticeView.jsx, and src/pages/ReviewPractices.jsx. Enforced in code: answer keys stay server-side; each score is clamped to the item\'s points; confidence below 0.90 sets status "under_review"; if the grading call fails, the attempt goes to manual teacher grading; teacher-adjusted scores are clamped too. Asked in the prompt only: lenient writing bar, honest confidence, one-sentence feedback.')
+      h('p', { class: 'where' }, 'Mirrors base44/shared/gradePractice.ts, src/components/PracticeView.jsx, and src/pages/ReviewPractices.jsx. Enforced in code: answer keys stay server-side; each score is clamped to the item\'s points; confidence below 0.90 sets status "under_review"; if AI scoring fails, the attempt is saved for the teacher to grade by hand; teacher-adjusted scores are clamped too. Asked in the prompt only: lenient writing bar, honest confidence, one-sentence feedback.')
     ];
   }
 

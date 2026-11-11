@@ -23,6 +23,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { usePreview } from "@/lib/PreviewContext";
+import { fnData, ownedBy } from "@/lib/ownership";
 
 const MIN_MS = 5 * 60 * 1000; // 5-minute minimum
 
@@ -35,13 +36,16 @@ function parseAnswers(text) {
   return {};
 }
 
-const nowIso = () => new Date().toISOString();
-
 // Fillable multiple-choice quiz built from the matching Google Doc.
 // Auto-grades on submit, enforces a silent 5-minute minimum, and supports
 // a teacher "return for another attempt" flow. A teacher previewing a
 // student (or an admin viewing) sees the student's picks read-only with
 // correctness against the answer key.
+//
+// Security: opening, autosaving and grading go through the submitQuiz server
+// function (QuizResponse is not student-writable), and quiz_json carries no
+// answers. The correct answers come from getAssessmentKey, which only returns
+// them to admins or after the student's attempt is graded.
 export default function QuizForm({ lesson }) {
   const { previewStudent } = usePreview();
   const [viewer, setViewer] = useState(null);
@@ -55,6 +59,7 @@ export default function QuizForm({ lesson }) {
   const [resetting, setResetting] = useState(false);
   const [pickSaving, setPickSaving] = useState(false);
   const [pickSavedAt, setPickSavedAt] = useState(null);
+  const [answerKey, setAnswerKey] = useState(null);
 
   const readOnly = !!(previewStudent || viewer?.role === "admin");
 
@@ -79,7 +84,7 @@ export default function QuizForm({ lesson }) {
         try {
           const res = await base44.entities.QuizResponse.filter({
             lesson_id: lesson.id,
-            created_by_id: v.id,
+            ...ownedBy(v.id),
           });
           if (active) {
             existing = res[0] || null;
@@ -122,16 +127,12 @@ export default function QuizForm({ lesson }) {
         v.role !== "admin"
       ) {
         try {
-          const r = await base44.entities.QuizResponse.create({
+          const res = await base44.functions.invoke("submitQuiz", {
             lesson_id: lesson.id,
-            answers_text: JSON.stringify({ selections: {} }),
-            started_at: nowIso(),
-            attempted_at: "",
-            score: 0,
-            total: 0,
-            status: "in_progress",
+            action: "start",
           });
-          if (active) setRecord(r);
+          const r = fnData(res).record;
+          if (active && r) setRecord(r);
         } catch {}
       }
 
@@ -156,7 +157,7 @@ export default function QuizForm({ lesson }) {
       try {
         const res = await base44.entities.QuizResponse.filter({
           lesson_id: lesson.id,
-          created_by_id: v.id,
+          ...ownedBy(v.id),
         });
         const r = res[0] || null;
         setRecord((prev) => {
@@ -174,6 +175,29 @@ export default function QuizForm({ lesson }) {
   const isReturned = record?.status === "returned";
   const canTake = readOnly ? false : !isGraded;
 
+  // Load the answer key for the read-only teacher view, or once the student's
+  // attempt is graded (the server refuses it to students before that).
+  useEffect(() => {
+    if (answerKey || !(readOnly || isGraded)) return;
+    let active = true;
+    (async () => {
+      try {
+        const res = await base44.functions.invoke("getAssessmentKey", {
+          kind: "quiz",
+          ref_id: lesson.id,
+        });
+        const a = fnData(res).answers;
+        if (active && Array.isArray(a)) setAnswerKey(a);
+      } catch {
+        /* correctness highlighting is best effort */
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [answerKey, readOnly, isGraded, lesson.id]);
+  const answerOf = (i) => (answerKey ? answerKey[i] : undefined);
+
   // Autosave each selection immediately as the student picks it, so a
   // refresh or tab close never loses their answers (no grading — just
   // persisted picks). Radio picks are discrete, so we save at once rather
@@ -184,8 +208,10 @@ export default function QuizForm({ lesson }) {
     setPickSaving(true);
     (async () => {
       try {
-        await base44.entities.QuizResponse.update(record.id, {
-          answers_text: JSON.stringify({ selections: picks }),
+        await base44.functions.invoke("submitQuiz", {
+          lesson_id: lesson.id,
+          action: "save",
+          selections: picks,
         });
         if (active) setPickSavedAt(new Date());
       } catch {
@@ -204,7 +230,7 @@ export default function QuizForm({ lesson }) {
     questions.every((_, i) => picks[i] !== undefined && picks[i] !== null);
 
   const score = questions.reduce(
-    (n, q, i) => n + (picks[i] === q.answer_index ? 1 : 0),
+    (n, q, i) => n + (answerKey && picks[i] === answerOf(i) ? 1 : 0),
     0
   );
 
@@ -212,15 +238,13 @@ export default function QuizForm({ lesson }) {
     if (!record) return;
     setResetting(true);
     try {
-      const updated = await base44.entities.QuizResponse.update(record.id, {
-        answers_text: JSON.stringify({ selections: {} }),
-        started_at: nowIso(),
-        attempted_at: "",
-        score: 0,
-        total: 0,
-        status: "in_progress",
+      const res = await base44.functions.invoke("submitQuiz", {
+        lesson_id: lesson.id,
+        action: "new_attempt",
       });
-      setRecord(updated);
+      const updated = fnData(res).record;
+      if (updated) setRecord(updated);
+      setAnswerKey(null);
       setPicks({});
     } finally {
       setResetting(false);
@@ -237,24 +261,20 @@ export default function QuizForm({ lesson }) {
     setSaving(true);
     setSaved(false);
     try {
-      const answers_text = JSON.stringify({ selections: picks });
-      const total = questions.length * 0.5; // 0.5 points per question
-      const computed = questions.reduce(
-        (n, q, i) => n + (picks[i] === q.answer_index ? 0.5 : 0),
-        0
-      );
-      const payload = {
-        answers_text,
-        score: computed,
-        total,
-        attempted_at: nowIso(),
-        status: "graded",
-      };
-      const updated = await base44.entities.QuizResponse.update(
-        record.id,
-        payload
-      );
-      setRecord(updated);
+      // Security: the server grades (0.5 pt per correct answer) and writes
+      // the score; the client only sends its picks.
+      const res = await base44.functions.invoke("submitQuiz", {
+        lesson_id: lesson.id,
+        action: "submit",
+        selections: picks,
+      });
+      const d = fnData(res);
+      if (d.too_soon) {
+        setShowMinWarning(true);
+        return;
+      }
+      if (Array.isArray(d.answers)) setAnswerKey(d.answers);
+      if (d.record) setRecord(d.record);
       setSaved(true);
     } finally {
       setSaving(false);
@@ -360,7 +380,7 @@ export default function QuizForm({ lesson }) {
                     >
                       {q.choices.map((c, j) => {
                         const isPicked = picked === j;
-                        const isCorrect = q.answer_index === j;
+                        const isCorrect = answerOf(i) === j;
                         let tone =
                           "border-stone-200/10 bg-stone-100/5 text-foreground";
                         if (showResult && isCorrect)
@@ -407,7 +427,7 @@ export default function QuizForm({ lesson }) {
                         </span>
                       )}
                     </p>
-                    {score * 0.5 !== record.score && (
+                    {answerKey && score * 0.5 !== record.score && (
                       <p className="text-stone-500 mt-1">
                         ({score * 0.5}/{questions.length * 0.5} as currently shown)
                       </p>

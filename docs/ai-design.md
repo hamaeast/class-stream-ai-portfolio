@@ -12,7 +12,7 @@ Class Stream makes **4 AI calls**, all on the server through Base44's `integrati
 ## Where the code chose rules over AI
 
 - **Worksheet, notes and quiz import** use a parser (`practiceParser.ts`) because the teacher's documents follow a fixed format. That makes import repeatable and free, with no model involved.
-- **Quiz and formative-assessment scoring** compares the chosen option with the stored `answer_index` in code.
+- **Quiz and formative-assessment scoring** compares the chosen option with the stored correct index in code, on the server (`submitQuiz`, `submitCfa`). The correct indexes live in the admin-only `AssessmentAnswerKey` entity, not on the question records students can read.
 - **Caching:** imported notes and lesson-plan pages are saved after the first fetch (`buildLessonNotes`, `getPhaseBook` with `LessonPlanCache`). The notes answer key is saved on the lesson, so the AI runs once per lesson.
 - **Re-scoring only when needed:** after a practice edit, `PracticeView.jsx` compares the old and new answer keys. It skips the bulk re-score when only the worksheet wording changed ("skip the credit spend").
 - **Batching:** bulk re-scoring runs five submissions at a time instead of one at a time.
@@ -23,8 +23,10 @@ Class Stream makes **4 AI calls**, all on the server through Base44's `integrati
 |-|-|-|
 | Answer keys hidden from students | **Yes**: `PracticeAnswerKey` is admin-only (row-level security) and is read on the server | `PracticeAnswerKey.jsonc`, `gradePractice.ts` |
 | Each AI score clamped to 0..item points | **Yes** | `gradePractice.ts` |
-| Low model confidence goes to the teacher | **Yes**: the points-weighted average of the model's self-reported confidence; below 0.90 sets `under_review` | `gradePractice.ts`, `PracticeView.jsx` |
-| Scoring call fails → teacher grades by hand | **Yes** | `PracticeView.jsx` |
+| Every submitted item gets a score | **Yes**: an item the model skips scores 0 of its points with confidence 0 (so the attempt goes to the teacher); results for items that weren't submitted are ignored | `gradePractice.ts` |
+| Low model confidence goes to the teacher | **Yes**: the points-weighted average of the model's self-reported confidence; below 0.90 sets `under_review` | `gradePractice.ts`, `gradePractice` function |
+| AI scoring fails → attempt saved for the teacher to grade by hand | **Yes** (if the whole request fails, the student keeps their draft and can resubmit) | `gradePractice` function |
+| Students can't write their own scores | **Yes**: response records are create/update admin-only; scores are computed and saved by server functions | see `docs/security-review.md` |
 | Teacher-adjusted scores clamped | **Yes** | `ReviewPractices.jsx` |
 | Assessment questions well-formed (text, exactly 4 choices, answer 0–3) | **Yes**: malformed ones are dropped | `buildCfa` |
 | New assessments hidden until the teacher releases them | **Yes**: saved with `published: false` | `buildCfa`, `CFAs.jsx`, `CfaEditor.jsx` |
@@ -38,8 +40,8 @@ Class Stream makes **4 AI calls**, all on the server through Base44's `integrati
 
 ## Known gaps
 
-- **Assessment answers are readable by students.** `CFA` records allow read access to every signed-in user, and `questions_json` includes `answer_index`. Quiz and assessment scoring also runs in the browser. A technical student could find the answers.
+- **Fixed in this public copy (not deployed to the live app): assessment answers were readable by students.** `questions_json` and `quiz_json` included `answer_index`, and scoring ran in the browser. Answers now live in the admin-only `AssessmentAnswerKey`, scoring runs on the server, and students get the correct answers only after their attempt is graded. Records built before the change keep inline answers until `migrateAnswerKeys` is run (or until the record is next opened). See `docs/security-review.md`.
 - **Model-reported confidence can be wrong.** A confidently wrong score posts without review. The teacher can still adjust grades later.
-- **If the model skips an item,** that item is left out of both the score and the maximum, which inflates the percentage. The code doesn't check that every submitted item came back.
+- **Fixed in this public copy (not deployed to the live app): a skipped item used to drop out** of both the score and the maximum, inflating the percentage. Every submitted item now appears in the results; a skipped one scores 0, keeps its maximum, and sends the attempt to the teacher.
 - **The answer key is the model's best guess** when a blank is ambiguous, and it's saved without an explicit teacher-approval step.
 - **Student answers are inserted into the prompt as data.** There is no code-level defense against text written to manipulate the grader, beyond the score clamp and confidence review.

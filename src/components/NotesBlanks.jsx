@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { usePreview } from "@/lib/PreviewContext";
+import { fnData, ownedBy } from "@/lib/ownership";
 
 const parseCached = (v) => {
   try {
@@ -33,6 +34,8 @@ const topicOf = (t) => (String(t || "").split("—")[1] || t || "").trim();
 // Drop the "Name: ___ Date: ___" header line mammoth pulled from the notes
 // doc — it isn't a real fill-in and shouldn't block submission. Applied at
 // render so already-cached lessons are cleaned up without a re-cache.
+// NOTE: base44/shared/notesBlanks.ts mirrors stripNameDate/addQuickCheckInputs
+// so the server can check every box is filled on submit. Keep them in sync.
 const stripNameDate = (html) =>
   String(html || "").replace(/<p>([\s\S]*?)<\/p>/gi, (m, inner) =>
     /Name:/i.test(inner) && /Date:/i.test(inner) && /<input/i.test(inner) ? "" : m
@@ -157,7 +160,7 @@ export default function NotesBlanks({ lesson }) {
           if (ownerId) {
             const mine = await base44.entities.NotesResponse.filter({
               lesson_id: lesson.id,
-              created_by_id: ownerId,
+              ...ownedBy(ownerId),
             });
             const r = (mine || [])[0];
             if (r) {
@@ -219,33 +222,24 @@ export default function NotesBlanks({ lesson }) {
     try {
       setSaving(true);
       const next = overrideStatus || statusRef.current;
-      const payload = {
+      // Security: saveNotes writes the record server-side and awards the
+      // 5 points itself on submit (after checking every box is filled); the
+      // client only sends the typed blanks.
+      const res = await base44.functions.invoke("saveNotes", {
         lesson_id: lesson.id,
-        title,
-        answers_text: JSON.stringify({ blanks: answersRef.current }),
-        status: next,
-      };
-      if (next === "submitted") {
-        payload.score = 5;
-        payload.total = 5;
-        payload.submitted_at = new Date().toISOString();
-      } else {
-        payload.total = 5;
-      }
-      if (respIdRef.current) {
-        await base44.entities.NotesResponse.update(respIdRef.current, payload);
-      } else {
-        const r = await base44.entities.NotesResponse.create({
-          ...payload,
-        });
-        if (r && r.id) {
-          respIdRef.current = r.id;
-          setRespId(r.id);
-        }
+        blanks: answersRef.current,
+        submit: next === "submitted",
+      });
+      const r = fnData(res).record;
+      if (r && r.id && !respIdRef.current) {
+        respIdRef.current = r.id;
+        setRespId(r.id);
       }
       setSavedAt(new Date());
+      return true;
     } catch (e) {
       setErr(e.message || "Could not save your notes");
+      return false;
     } finally {
       setSaving(false);
     }
@@ -265,7 +259,13 @@ export default function NotesBlanks({ lesson }) {
       return;
     }
     setSubmitting(true);
-    await persist("submitted");
+    // A pending autosave would now be rejected once the notes are locked.
+    if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
+    const ok = await persist("submitted");
+    if (!ok) {
+      setSubmitting(false);
+      return;
+    }
     setStatus("submitted");
     statusRef.current = "submitted";
     inputs.forEach((el) => (el.disabled = true));

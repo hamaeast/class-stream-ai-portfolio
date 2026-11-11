@@ -1,0 +1,48 @@
+{
+  "name": "AssessmentAnswerKey",
+  "type": "object",
+  "properties": {
+    "kind": {
+      "description": "Which assessment the key belongs to: 'quiz' (Lesson.quiz_json) or 'cfa' (CFA.questions_json).",
+      "type": "string",
+      "enum": [
+        "quiz",
+        "cfa"
+      ]
+    },
+    "ref_id": {
+      "description": "Lesson id (kind='quiz') or CFA id (kind='cfa').",
+      "type": "string"
+    },
+    "answers_json": {
+      "description": "JSON array of correct choice indexes, one per question in the same order as the student-readable questions. Server-side only: the submit functions grade against it and students never read it.",
+      "type": "string"
+    }
+  },
+  "required": [
+    "kind",
+    "ref_id"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

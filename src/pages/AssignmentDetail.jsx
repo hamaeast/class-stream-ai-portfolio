@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
+import { fnData, ownedBy } from "@/lib/ownership";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -37,7 +38,7 @@ export default function AssignmentDetail() {
       try {
         const me = await base44.auth.me();
         setUser(me);
-        const subs = await base44.entities.Submission.filter({ assignment_id: id, created_by_id: me.id });
+        const subs = await base44.entities.Submission.filter({ assignment_id: id, ...ownedBy(me.id) });
         if (subs && subs.length) {
           setSubmission(subs[0]);
           setText(subs[0].submission_text || "");
@@ -75,19 +76,16 @@ export default function AssignmentDetail() {
     }
     setSaving(true);
     try {
-      const payload = {
+      // Security: Submission is not student-writable; saveSubmission writes
+      // the student's own row and never accepts grade/feedback/status.
+      const res = await base44.functions.invoke("saveSubmission", {
         assignment_id: id,
         submission_text: text.trim(),
         file_url: fileUrl,
-        status: "submitted",
-      };
-      if (submission) {
-        const updated = await base44.entities.Submission.update(submission.id, payload);
-        setSubmission(updated);
-      } else {
-        const created = await base44.entities.Submission.create(payload);
-        setSubmission(created);
-      }
+      });
+      const saved = fnData(res).record;
+      if (!saved) throw new Error("save failed");
+      setSubmission(saved);
       toast({ title: "Assignment submitted!" });
     } catch {
       toast({ title: "Something went wrong", variant: "destructive" });

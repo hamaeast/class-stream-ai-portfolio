@@ -86,12 +86,22 @@ export async function gradeAnswers(base44, lessonId, answers) {
 
   const data = typeof res === "string" ? safeParse(res) || {} : res;
   const raw = data?.results || [];
-  const results = raw.map((r) => {
-    const k = keyMap.get(r.id) || {};
+  // Build results from the SUBMITTED items, not from what the model returned:
+  // a result whose id wasn't submitted is ignored, and an item the model
+  // skipped scores 0 of its key points with confidence 0, so it still counts
+  // toward the max and forces teacher review instead of silently dropping out.
+  const byId = new Map();
+  for (const r of raw) if (r && !byId.has(String(r.id))) byId.set(String(r.id), r);
+  const results = items.map((it) => {
+    const k = keyMap.get(it.id) || {};
     const max = k.points || 0;
+    const r = byId.get(it.id);
+    if (!r) {
+      return { id: it.id, score: 0, max, feedback: "Not graded automatically", confidence: 0 };
+    }
     const score = Math.max(0, Math.min(max, Number(r.score) || 0));
     const conf = Math.max(0, Math.min(1, Number(r.confidence) || 0));
-    return { id: r.id, score, max, feedback: String(r.feedback || ""), confidence: conf };
+    return { id: it.id, score, max, feedback: String(r.feedback || ""), confidence: conf };
   });
   const total_score = results.reduce((a, r) => a + r.score, 0);
   const total_max = results.reduce((a, r) => a + r.max, 0);

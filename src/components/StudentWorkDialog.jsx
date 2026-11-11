@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, ClipboardList, PenLine, RotateCcw } from "lucide-react";
 import GoogleDocPreview from "@/components/GoogleDocPreview";
+import { ownerOf } from "@/lib/ownership";
 
 const PART_LABEL = { lesson: "Lesson", notes: "Notes", practice: "Practice", quiz: "Quiz" };
 
@@ -32,8 +33,8 @@ export default function StudentWorkDialog({
 }) {
   const open = !!student;
   const myCheckins = (checkins || []).filter((c) => student && c.created_by_id === student.id);
-  const mySubs = (submissions || []).filter((s) => student && s.created_by_id === student.id);
-  const myQuizzes = (quizResponses || []).filter((r) => student && r.created_by_id === student.id);
+  const mySubs = (submissions || []).filter((s) => student && ownerOf(s) === student.id);
+  const myQuizzes = (quizResponses || []).filter((r) => student && ownerOf(r) === student.id);
 
   const lessonTitle = (id) =>
     (lessons || []).find((l) => l.id === id)?.title || "Unknown lesson";

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { base44 } from "@/api/base44Client";
+import { ownerOf } from "@/lib/ownership";
 import { Loader2, ClipboardCheck, Check } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -137,7 +138,7 @@ export default function ReviewPractices() {
       ) : (
         <div className="space-y-4">
           {pending.map((r) => {
-            const u = userMap.get(r.created_by_id);
+            const u = userMap.get(ownerOf(r));
             const l = lessonMap.get(r.lesson_id);
             const practice = practiceOf(l) || {};
             const keyItems = keyMap.get(r.lesson_id) || [];

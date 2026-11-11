@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { migrateInlineAnswers, saveAnswerKey, splitAnswerKey } from '../../shared/assessmentKey.ts';
 
 // Builds a lesson's multiple-choice quiz from the matching Google Doc (quiz_file_url).
 // The quiz doc has questions as a numbered list; each "<li>" holds the question +
@@ -8,7 +9,11 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 //
 // Payload: { lesson_id, quiz_file_url? }
 //   - quiz_file_url (optional): override or seed the doc link for this lesson.
-// Returns: { questions: [{ question, choices: string[4], answer_index: number }] }
+// Returns: { questions: [{ question, choices: string[4] }] }
+//
+// Security: the parsed answer_index values go to the admin-only
+// AssessmentAnswerKey (kind 'quiz'); quiz_json and this function's response
+// (callable by students) carry only { question, choices }.
 
 function decode(s) {
   return (s || '')
@@ -122,7 +127,11 @@ Deno.serve(async (req) => {
     if (lesson.quiz_json) {
       try {
         const cached = JSON.parse(lesson.quiz_json);
-        if (Array.isArray(cached)) return Response.json({ questions: cached });
+        if (Array.isArray(cached)) {
+          // Legacy caches still hold answer_index: move it to the key first.
+          const stripped = await migrateInlineAnswers(base44, 'quiz', lessonId, cached);
+          return Response.json({ questions: stripped });
+        }
       } catch {}
     }
 
@@ -142,9 +151,11 @@ Deno.serve(async (req) => {
     const html = await fetchHtml(base44, docId);
     if (!html) return Response.json({ questions: [] });
 
-    const questions = parseQuizHtml(html);
+    const { questions, answers } = splitAnswerKey(parseQuizHtml(html));
     if (questions.length) {
       try {
+        // Key first, so a cached quiz is never left without one.
+        await saveAnswerKey(base44, 'quiz', lessonId, answers);
         await base44.asServiceRole.entities.Lesson.update(lessonId, {
           quiz_json: JSON.stringify(questions),
         });

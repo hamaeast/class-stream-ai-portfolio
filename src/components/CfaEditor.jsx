@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Sparkles, Save, Eye, EyeOff, Trash2, Plus } from "lucide-react";
+import { fnData } from "@/lib/ownership";
 
 function parseQuestions(text) {
   try {
@@ -17,6 +18,11 @@ function parseQuestions(text) {
 
 // Teacher-only editor for one CFA: AI-generate, edit the study guide, edit
 // questions, set a due date, and toggle the student release (published).
+//
+// Security: questions_json no longer holds answer_index (students can read
+// it). The editor loads the correct answers from getAssessmentKey and saves
+// questions through saveCfaQuestions, which splits the answers into the
+// admin-only AssessmentAnswerKey.
 export default function CfaEditor({ cfa, onChanged }) {
   const [studyGuide, setStudyGuide] = useState(cfa.study_guide || "");
   const [questions, setQuestions] = useState(parseQuestions(cfa.questions_json));
@@ -28,15 +34,39 @@ export default function CfaEditor({ cfa, onChanged }) {
   const [savingMeta, setSavingMeta] = useState(false);
   const [error, setError] = useState("");
 
+  // Merge the server-held answer key into the editable questions.
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const res = await base44.functions.invoke("getAssessmentKey", {
+          kind: "cfa",
+          ref_id: cfa.id,
+        });
+        const a = fnData(res).answers;
+        if (active && Array.isArray(a))
+          setQuestions((qs) =>
+            qs.map((q, i) => (Number.isInteger(a[i]) ? { ...q, answer_index: a[i] } : q))
+          );
+      } catch (e) {
+        if (active) setError(e?.message || "Could not load the answer key");
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [cfa.id, cfa.questions_json]);
+
   const generate = async () => {
     setGenerating(true);
     setError("");
     try {
       const res = await base44.functions.invoke("buildCfa", { cfa_id: cfa.id });
-      const saved = res?.data?.cfa || res?.cfa;
+      const d = fnData(res);
+      const saved = d.cfa;
       if (saved) {
         setStudyGuide(saved.study_guide || "");
-        setQuestions(parseQuestions(saved.questions_json));
+        setQuestions(Array.isArray(d.questions) ? d.questions : parseQuestions(saved.questions_json));
         onChanged();
       }
     } catch (e) {
@@ -61,8 +91,9 @@ export default function CfaEditor({ cfa, onChanged }) {
   const saveQuestions = async () => {
     setSavingQuestions(true);
     try {
-      await base44.entities.CFA.update(cfa.id, {
-        questions_json: JSON.stringify(questions),
+      await base44.functions.invoke("saveCfaQuestions", {
+        cfa_id: cfa.id,
+        questions,
       });
       onChanged();
     } catch (e) {

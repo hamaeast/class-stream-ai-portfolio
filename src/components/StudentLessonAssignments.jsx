@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
+import { fnData, ownedBy } from "@/lib/ownership";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -24,8 +25,8 @@ export default function StudentLessonAssignments({ lessons, assignments, student
     try {
       const [ci, subs, pr] = await Promise.all([
         base44.entities.CheckIn.filter({ created_by_id: student.id }),
-        base44.entities.Submission.filter({ created_by_id: student.id }),
-        base44.entities.PracticeResponse.filter({ created_by_id: student.id }),
+        base44.entities.Submission.filter(ownedBy(student.id)),
+        base44.entities.PracticeResponse.filter(ownedBy(student.id)),
       ]);
       setCheckins(ci || []);
       setSubmissions(subs || []);
@@ -81,15 +82,14 @@ export default function StudentLessonAssignments({ lessons, assignments, student
     }
     setSavingId(a.id);
     try {
-      const existing = subFor(a.id);
-      const payload = {
+      // Security: Submission is not student-writable; saveSubmission writes
+      // the student's own row and never accepts grade/feedback/status.
+      const out = await base44.functions.invoke("saveSubmission", {
         assignment_id: a.id,
         submission_text: text,
-        status: "submitted",
-      };
-      const res = existing
-        ? await base44.entities.Submission.update(existing.id, payload)
-        : await base44.entities.Submission.create(payload);
+      });
+      const res = fnData(out).record;
+      if (!res) throw new Error("save failed");
       setSubmissions((p) => [res, ...p.filter((s) => s.id !== res.id)]);
       toast({ title: "Assignment submitted!" });
     } catch {

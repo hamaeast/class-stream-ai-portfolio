@@ -50,6 +50,8 @@ Imported materials and AI-generated materials are kept separate. **Lesson notes,
 | Cached lesson-plan pages, notes, and notes answer keys; regrading only when the answer key changes | Avoiding repeated processing and unnecessary AI calls |
 | Editable practice questions and keys, student preview mode, and grade exports ([`PracticeEditor.jsx`](src/components/PracticeEditor.jsx), [`PreviewStudent.jsx`](src/pages/PreviewStudent.jsx), [`exportCompleteGradesCsv`](base44/functions/exportCompleteGradesCsv/entry.ts)) | Designing around practical teacher needs |
 
+**Security review:** [docs/security-review.md](docs/security-review.md) lists what a review of grading and data access found. Students could write their own scores, answer keys were readable, and two records had no access rules. It also covers how this repository fixes each one. These fixes are in this public copy and have **not been deployed to the live classroom app**.
+
 More detail: **[docs/ai-design.md](docs/ai-design.md)** covers each AI call, which protections the code enforces and which are only asked for in the prompt, and known gaps.
 
 ## Try the demo locally

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
+import { ownerOf } from "@/lib/ownership";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -142,7 +143,7 @@ export default function TeacherDashboard() {
     .filter((u) => u.role !== "admin")
     .sort((a, b) => (a.class_period || "99").localeCompare(b.class_period || "99") || (a.full_name || "").localeCompare(b.full_name || ""));
 
-  const studentCount = (s) => submissions.filter((sub) => sub.created_by_id === s.id).length;
+  const studentCount = (s) => submissions.filter((sub) => ownerOf(sub) === s.id).length;
 
   const StudentCard = (s) => (
     <Card key={s.id} className={NEON_CARD}>
@@ -462,7 +463,7 @@ export default function TeacherDashboard() {
             <div className="space-y-3">
               {submissions.map((s) => {
                 const assignment = assignments.find((a) => a.id === s.assignment_id);
-                const student = users.find((u) => u.id === s.created_by_id);
+                const student = users.find((u) => u.id === ownerOf(s));
                 return (
                   <SubmissionRow
                     key={s.id}

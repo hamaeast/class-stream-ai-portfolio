@@ -1,4 +1,5 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.44";
+import { saveAnswerKey, splitAnswerKey } from "../../shared/assessmentKey.ts";
 
 // Teacher-only: AI-generates a CFA (Common Formative Assessment) covering a
 // 3-phase range. Produces BOTH a short markdown study guide and ~10
@@ -8,7 +9,11 @@ import { createClientFromRequest } from "npm:@base44/sdk@0.8.44";
 //
 // Payload: { cfa_id }  -> regenerate an existing CFA (uses its phase range)
 //           { phase_start, phase_end } -> generate into a new CFA
-// Returns: { cfa: <saved CFA entity> }
+// Returns: { cfa: <saved CFA entity>, questions: <editor copy with answer_index> }
+//
+// Security: answer_index values are stored in the admin-only
+// AssessmentAnswerKey (kind 'cfa'); CFA.questions_json (student-readable)
+// holds only { question, choices }.
 
 function parseLesson(l: any) {
   const overview = String(l.title || "").match(/^Phase\s*(\d+)\s*[—–-]\s*(.+)$/);
@@ -125,7 +130,7 @@ export default async function (req: Request): Promise<Response> {
       phase_start: phaseStart,
       phase_end: phaseEnd,
       study_guide: studyGuide,
-      questions_json: JSON.stringify(questions),
+      questions_json: JSON.stringify(splitAnswerKey(questions).questions),
     };
 
     let saved: any;
@@ -138,7 +143,9 @@ export default async function (req: Request): Promise<Response> {
       });
     }
 
-    return Response.json({ cfa: saved });
+    await saveAnswerKey(base44, "cfa", saved.id, splitAnswerKey(questions).answers);
+
+    return Response.json({ cfa: saved, questions });
   } catch (error) {
     return Response.json({ error: (error as any).message || String(error) }, { status: 500 });
   }

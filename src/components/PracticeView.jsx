@@ -23,8 +23,8 @@ import GoogleDocPreview from "@/components/GoogleDocPreview";
 import PracticeWorksheet from "@/components/PracticeWorksheet";
 import PracticeEditor from "@/components/PracticeEditor";
 import { parseLesson } from "@/lib/lessonPhases";
+import { fnData, ownedBy } from "@/lib/ownership";
 
-const topicOf = (t) => (String(t || "").split("—")[1] || t || "").trim();
 const parsePractice = (v) => {
   try {
     const o = JSON.parse(v);
@@ -100,7 +100,7 @@ export default function PracticeView({ lesson, me, isAdmin }) {
       try {
         const mine = await base44.entities.PracticeResponse.filter({
           lesson_id: lesson.id,
-          created_by_id: target.id,
+          ...ownedBy(target.id),
         });
         if (!active) return;
         setResp((mine || [])[0]);
@@ -156,7 +156,7 @@ export default function PracticeView({ lesson, me, isAdmin }) {
       try {
         const mine = await base44.entities.NotesResponse.filter({
           lesson_id: lesson.id,
-          created_by_id: ownerId,
+          ...ownedBy(ownerId),
         });
         if (!active) return;
         setNotesSubmitted((mine || []).some((r) => r.status === "submitted"));
@@ -214,63 +214,25 @@ export default function PracticeView({ lesson, me, isAdmin }) {
       return;
     }
     setGrading(true);
-    // Grade via the AI function. If it's unavailable (e.g. the app's monthly
-    // integration credits are exhausted), don't block the student — save the
-    // attempt as "under_review" so the teacher can grade it manually instead
-    // of surfacing a hard 500.
-    let data = null;
-    let manualReview = false;
+    // Security: gradePractice grades AND saves the attempt server-side
+    // (PracticeResponse is not student-writable). It applies the same rules
+    // this view used to: point goal, attempt limit, under_review below 90%
+    // confidence, and, if AI grading is unavailable (e.g. the app's monthly
+    // integration credits are exhausted), a manual-review save so the
+    // student isn't blocked and the teacher grades it instead.
     try {
       const res = await base44.functions.invoke("gradePractice", {
         lesson_id: lesson.id,
         answers: answered,
       });
-      data = res.data || res || {};
-    } catch (e) {
-      manualReview = true;
-    }
-    try {
-      const results = (data && data.results) || [];
-      const fb = {};
-      results.forEach((r) => {
-        fb[r.id] = { score: r.score, max: r.max, feedback: r.feedback };
-      });
-      const score = manualReview
-        ? 0
-        : data.total_score ?? results.reduce((a, r) => a + (r.score || 0), 0);
-      const total = manualReview
-        ? (practice.questions || []).reduce((s, q) => s + (answered[q.id] ? q.points : 0), 0)
-        : data.total_max ?? results.reduce((a, r) => a + (r.max || 0), 0);
-      const confidence = manualReview ? null : (typeof data.confidence === "number" ? data.confidence : null);
-      const review_needed = manualReview ? true : !!data.review_needed;
-      const history = resp ? parseJson(resp.attempt_history_text, []) : [];
-      const nextAttempt = (resp?.attempts || 0) + 1;
-      history.push({
-        answers: answered,
-        feedback: fb,
-        score,
-        total,
-        attempt: nextAttempt,
-        at: new Date().toISOString(),
-      });
-      const payload = {
-        lesson_id: lesson.id,
-        title: practice.title || `Practice — ${topicOf(lesson.title)}`,
-        point_goal: practice.point_goal || 10,
-        answers_text: JSON.stringify(answered),
-        feedback_text: JSON.stringify(fb),
-        score,
-        total,
-        attempts: nextAttempt,
-        attempt_history_text: JSON.stringify(history),
-        submitted_at: new Date().toISOString(),
-        status: review_needed ? "under_review" : "submitted",
-        confidence: confidence,
-        review_needed: review_needed,
-      };
-      const saved = resp
-        ? await base44.entities.PracticeResponse.update(resp.id, payload)
-        : await base44.entities.PracticeResponse.create(payload);
+      const data = fnData(res);
+      const saved = data.record;
+      if (!saved) throw new Error(data.error || "Could not save submission");
+      const manualReview = !!data.manual_review;
+      const review_needed = !!data.review_needed;
+      const score = saved.score;
+      const total = saved.total;
+      const nextAttempt = saved.attempts;
       setResp(saved);
       setEditing(false);
       setReviewOpen(false);
@@ -451,7 +413,7 @@ export default function PracticeView({ lesson, me, isAdmin }) {
         // Refresh the student's own response so the page reflects the new score.
         const mine = await base44.entities.PracticeResponse.filter({
           lesson_id: lesson.id,
-          created_by_id: target.id,
+          ...ownedBy(target.id),
         });
         setResp((mine || [])[0] || null);
       } catch (e) {

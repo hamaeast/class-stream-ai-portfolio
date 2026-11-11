@@ -8,6 +8,7 @@ import { useLessons, useCheckins } from "@/lib/entityQueries";
 import { groupByPhase, phaseLabel } from "@/lib/lessonPhases";
 import { NEON_CARD, NEON_ACCENT } from "@/lib/neon-styles";
 import { base44 } from "@/api/base44Client";
+import { ownedBy } from "@/lib/ownership";
 import { usePreview } from "@/lib/PreviewContext";
 
 // One quiz per lesson, grouped by phase. Each row names the lesson the quiz
@@ -29,7 +30,7 @@ export default function Quizzes() {
       if (!v) return;
       if (active) setViewer(v);
       try {
-        const r = await base44.entities.QuizResponse.filter({ created_by_id: v.id });
+        const r = await base44.entities.QuizResponse.filter(ownedBy(v.id));
         if (active) setResponses(r || []);
       } catch {}
     })();

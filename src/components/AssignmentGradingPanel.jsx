@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
+import { ownerOf } from "@/lib/ownership";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -42,7 +43,7 @@ export default function AssignmentGradingPanel({ assignment }) {
       ]);
       setStudents(sortStudents((users || []).filter((u) => u.role !== "admin")));
       const map = new Map();
-      (subs || []).forEach((s) => map.set(s.created_by_id, s));
+      (subs || []).forEach((s) => map.set(ownerOf(s), s));
       setSubIndex(map);
     } catch (e) {
       console.error(e);

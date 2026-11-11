@@ -6,8 +6,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Send, Lock, CheckCircle2, Trophy } from "lucide-react";
 import { usePreview } from "@/lib/PreviewContext";
-
-const nowIso = () => new Date().toISOString();
+import { fnData, ownedBy } from "@/lib/ownership";
 
 function parseAnswers(text) {
   try {
@@ -27,6 +26,11 @@ function parseQuestions(text) {
 // Student-facing CFA quiz: auto-grades on submit, autosaves selections.
 // A teacher previewing a student (or an admin) sees the student's picks
 // read-only with correctness against the answer key.
+//
+// Security: opening, autosaving and grading go through the submitCfa server
+// function (CFAResponse is not student-writable), and questions_json carries
+// no answers. The correct answers come from getAssessmentKey, which only
+// returns them to admins or after the student's attempt is graded.
 export default function CfaForm({ cfa }) {
   const { previewStudent } = usePreview();
   const [viewer, setViewer] = useState(null);
@@ -38,6 +42,7 @@ export default function CfaForm({ cfa }) {
   const [saved, setSaved] = useState(false);
   const [pickSaving, setPickSaving] = useState(false);
   const [pickSavedAt, setPickSavedAt] = useState(null);
+  const [answerKey, setAnswerKey] = useState(null);
 
   const readOnly = !!(previewStudent || viewer?.role === "admin");
 
@@ -63,7 +68,7 @@ export default function CfaForm({ cfa }) {
         try {
           const res = await base44.entities.CFAResponse.filter({
             cfa_id: cfa.id,
-            created_by_id: v.id,
+            ...ownedBy(v.id),
           });
           if (active) {
             existing = res[0] || null;
@@ -76,16 +81,12 @@ export default function CfaForm({ cfa }) {
       // Create an in_progress record on first open — real students only.
       if (active && qs.length > 0 && !existing && v && !previewStudent && v.role !== "admin") {
         try {
-          const r = await base44.entities.CFAResponse.create({
+          const res = await base44.functions.invoke("submitCfa", {
             cfa_id: cfa.id,
-            answers_text: JSON.stringify({ selections: {} }),
-            started_at: nowIso(),
-            attempted_at: "",
-            score: 0,
-            total: qs.length,
-            status: "in_progress",
+            action: "start",
           });
-          if (active) setRecord(r);
+          const r = fnData(res).record;
+          if (active && r) setRecord(r);
         } catch {}
       }
       if (active) setBuilding(false);
@@ -98,6 +99,29 @@ export default function CfaForm({ cfa }) {
   const isGraded = record?.status === "graded";
   const canTake = readOnly ? false : !isGraded;
 
+  // Load the answer key for the read-only teacher view, or once the student's
+  // attempt is graded (the server refuses it to students before that).
+  useEffect(() => {
+    if (answerKey || !(readOnly || isGraded)) return;
+    let active = true;
+    (async () => {
+      try {
+        const res = await base44.functions.invoke("getAssessmentKey", {
+          kind: "cfa",
+          ref_id: cfa.id,
+        });
+        const a = fnData(res).answers;
+        if (active && Array.isArray(a)) setAnswerKey(a);
+      } catch {
+        /* correctness highlighting is best effort */
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [answerKey, readOnly, isGraded, cfa.id]);
+  const answerOf = (i) => (answerKey ? answerKey[i] : undefined);
+
   // Autosave each selection immediately.
   useEffect(() => {
     if (!record || readOnly || !canTake) return;
@@ -105,8 +129,10 @@ export default function CfaForm({ cfa }) {
     setPickSaving(true);
     (async () => {
       try {
-        await base44.entities.CFAResponse.update(record.id, {
-          answers_text: JSON.stringify({ selections: picks }),
+        await base44.functions.invoke("submitCfa", {
+          cfa_id: cfa.id,
+          action: "save",
+          selections: picks,
         });
         if (active) setPickSavedAt(new Date());
       } catch {}
@@ -123,7 +149,7 @@ export default function CfaForm({ cfa }) {
     questions.every((_, i) => picks[i] !== undefined && picks[i] !== null);
 
   const correctCount = questions.reduce(
-    (n, q, i) => n + (picks[i] === q.answer_index ? 1 : 0),
+    (n, q, i) => n + (answerKey && picks[i] === answerOf(i) ? 1 : 0),
     0
   );
 
@@ -131,19 +157,16 @@ export default function CfaForm({ cfa }) {
     setSaving(true);
     setSaved(false);
     try {
-      const total = questions.length;
-      const computed = questions.reduce(
-        (n, q, i) => n + (picks[i] === q.answer_index ? 1 : 0),
-        0
-      );
-      const updated = await base44.entities.CFAResponse.update(record.id, {
-        answers_text: JSON.stringify({ selections: picks }),
-        score: computed,
-        total,
-        attempted_at: nowIso(),
-        status: "graded",
+      // Security: the server grades (1 pt per correct answer) and writes the
+      // score; the client only sends its picks.
+      const res = await base44.functions.invoke("submitCfa", {
+        cfa_id: cfa.id,
+        action: "submit",
+        selections: picks,
       });
-      setRecord(updated);
+      const d = fnData(res);
+      if (Array.isArray(d.answers)) setAnswerKey(d.answers);
+      if (d.record) setRecord(d.record);
       setSaved(true);
     } finally {
       setSaving(false);
@@ -222,7 +245,7 @@ export default function CfaForm({ cfa }) {
                 >
                   {q.choices.map((c, j) => {
                     const isPicked = picked === j;
-                    const isCorrect = q.answer_index === j;
+                    const isCorrect = answerOf(i) === j;
                     let tone = "border-stone-200/10 bg-stone-100/5 text-foreground";
                     if (showResult && isCorrect)
                       tone = "border-[#39FF14]/40 bg-[#39FF14]/10 text-[#bff9bf]";
