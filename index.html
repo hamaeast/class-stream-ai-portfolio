@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Isolation: this page may load only its own files and may not make any network requests. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; form-action 'none'; frame-src 'none'; base-uri 'none'" />
+  <title>Class Stream Demo</title>
+  <link rel="stylesheet" href="demo.css" />
+</head>
+<body>
+  <div class="banner" role="note">
+    <strong>Demo mode.</strong> Fictional lesson materials and students. AI responses are <strong>prerecorded examples</strong>, not live model calls. Nothing here connects to the classroom app, Google Drive, or any server.
+  </div>
+  <header class="top">
+    <div>
+      <p class="eyebrow">Class Stream · portfolio demo · a custom classroom app built for a fellow educator</p>
+      <h1>Middle-school computer science: from teacher documents to AI-scored practice</h1>
+    </div>
+    <nav class="tabs" aria-label="Demo walkthroughs">
+      <a href="#import" data-tab="import">1 · Import a worksheet</a>
+      <a href="#cfa" data-tab="cfa">2 · Formative assessment</a>
+      <a href="#grade" data-tab="grade">3 · AI scoring + teacher review</a>
+    </nav>
+  </header>
+  <main id="app"></main>
+  <footer class="foot">Rules in this demo are ported from the production code named on each screen. See <code>demo/policy.js</code> and <code>docs/ai-design.md</code>.</footer>
+  <script src="policy.js"></script>
+  <script src="data.js"></script>
+  <script src="demo.js"></script>
+</body>
+</html>
